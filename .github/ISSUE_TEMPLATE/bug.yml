@@ -64,7 +64,7 @@ body:
   - type: dropdown
     id: platforms
     attributes:
-      label: Which platofrms were you trying to build for?
+      label: Which platforms were you trying to build for?
       description: You may select more than one.
       multiple: true
       options:
