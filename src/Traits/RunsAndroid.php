@@ -370,7 +370,36 @@ XML;
 
     private function updateIcuConfiguration(): void
     {
-        // ICU configuration is handled during installation
+        $jsonPath = base_path('nativephp.json');
+
+        if (! file_exists($jsonPath)) {
+            return;
+        }
+
+        $nativephp = json_decode(file_get_contents($jsonPath), true) ?? [];
+
+        if (empty($nativephp['php']['icu'])) {
+            return;
+        }
+
+        $appId = config('nativephp.app_id');
+        $packagePath = str_replace('.', '/', $appId);
+        $bridgePath = base_path("nativephp/android/app/src/main/java/{$packagePath}/bridge/PHPBridge.kt");
+
+        if (! File::exists($bridgePath)) {
+            return;
+        }
+
+        $contents = File::get($bridgePath);
+
+        if (! str_contains($contents, 'System.loadLibrary("icudata")')) {
+            $contents = str_replace(
+                'System.loadLibrary("php")',
+                'System.loadLibrary("icudata")'.PHP_EOL.'        System.loadLibrary("php")',
+                $contents
+            );
+            File::put($bridgePath, $contents);
+        }
     }
 
     private function updateLocalProperties(): void
