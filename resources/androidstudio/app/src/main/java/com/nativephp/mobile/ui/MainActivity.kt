@@ -318,6 +318,20 @@ class MainActivity : FragmentActivity(), WebViewProvider {
     }
 
     private fun handleDeepLinkIntent(intent: Intent?) {
+        // Local notification taps may deliver path-only routing via extra (no intent.data URI)
+        val notificationUrl = intent?.getStringExtra("notification_url")
+        if (!notificationUrl.isNullOrEmpty()) {
+            Log.d("DeepLink", "🔔 Notification URL: $notificationUrl")
+            pendingDeepLink = notificationUrl
+            if (::laravelEnv.isInitialized && ::webViewManager.isInitialized) {
+                val fullUrl = "http://127.0.0.1$notificationUrl"
+                Log.d("DeepLink", "🚀 Loading notification URL immediately: $fullUrl")
+                webView.loadUrl(fullUrl)
+                pendingDeepLink = null
+            }
+            return
+        }
+
         val uri = intent?.data ?: return
         Log.d("DeepLink", "🌐 Received deep link: $uri")
 
