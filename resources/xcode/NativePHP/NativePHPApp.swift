@@ -27,6 +27,9 @@ struct NativePHPApp: App {
 
         DebugLogger.shared.log("📱 NativePHPApp.init() starting (minimal)")
 
+        // Register BGTaskScheduler handlers before app finishes launching
+        PHPScheduler.shared.registerBackgroundTasks()
+
         // Only register bridge functions in init - this is fast and doesn't block
         // All heavy initialization is deferred to after the splash view is visible
         DebugLogger.shared.log("📱 NativePHPApp.init() registering bridge functions")
@@ -78,8 +81,11 @@ struct NativePHPApp: App {
                     NSLog("[NativePHP] Skipping artisan commands — no extraction needed")
                 }
 
-                // Execute plugin post-boot callbacks
-                NativePHPPluginRegistry.shared.executeOnAppReady()
+                // Schedule background task runners
+                NSLog("[NativePHP] PHPScheduler.scheduleNextRun()")
+                PHPScheduler.shared.scheduleNextRun()
+                NSLog("[NativePHP] PHPScheduler.scheduleNextRefresh()")
+                PHPScheduler.shared.scheduleNextRefresh()
             } else {
                 NSLog("[NativePHP] persistent boot failed, falling back to classic mode")
                 createStorageLink()
@@ -156,6 +162,7 @@ struct NativePHPApp: App {
                     }
                 }
             }
+            .modifier(ImmersiveChromeModifier())
         }
     }
 
@@ -520,5 +527,16 @@ struct NativePHPApp: App {
         argv.forEach { free($0) }
 
         return output
+    }
+}
+
+// MARK: - Immersive fullscreen (status bar / system home indicator overlay on supported OS versions)
+private struct ImmersiveChromeModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 16.0, *) {
+            content.persistentSystemOverlays(.hidden)
+        } else {
+            content
+        }
     }
 }

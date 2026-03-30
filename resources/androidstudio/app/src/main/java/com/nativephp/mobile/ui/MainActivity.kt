@@ -68,7 +68,7 @@ class MainActivity : FragmentActivity(), WebViewProvider {
     private var showSplash by mutableStateOf(true)
 
     // Status bar style configuration - replaced during build
-    private val statusBarStyle = "REPLACE_STATUS_BAR_STYLE"
+    private val statusBarStyle = "auto"
 
     companion object {
         // Static instance holder for accessing MainActivity from other activities
@@ -85,6 +85,7 @@ class MainActivity : FragmentActivity(), WebViewProvider {
 
         // Configure status bar icon colors
         configureStatusBar()
+        applyImmersiveSystemUi()
 
         // Apply window insets - inject as CSS variables for web content
         ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { view, insets ->
@@ -180,6 +181,25 @@ class MainActivity : FragmentActivity(), WebViewProvider {
         if ((newConfig.uiMode and Configuration.UI_MODE_NIGHT_MASK) != 0) {
             configureStatusBar()
         }
+        applyImmersiveSystemUi()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            applyImmersiveSystemUi()
+        }
+    }
+
+    /**
+     * Hide status + navigation bars for immersive fullscreen; user can swipe from edge to reveal transient bars.
+     */
+    private fun applyImmersiveSystemUi() {
+        val controller = WindowInsetsControllerCompat(window, window.decorView)
+        val types = WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.navigationBars()
+        controller.hide(types)
+        controller.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
     }
 
     /**
@@ -298,20 +318,6 @@ class MainActivity : FragmentActivity(), WebViewProvider {
     }
 
     private fun handleDeepLinkIntent(intent: Intent?) {
-        // Check for notification URL extra (from local notification taps)
-        val notificationUrl = intent?.getStringExtra("notification_url")
-        if (!notificationUrl.isNullOrEmpty()) {
-            Log.d("DeepLink", "🔔 Notification URL: $notificationUrl")
-            pendingDeepLink = notificationUrl
-            if (::laravelEnv.isInitialized && ::webViewManager.isInitialized) {
-                val fullUrl = "http://127.0.0.1$notificationUrl"
-                Log.d("DeepLink", "🚀 Loading notification URL immediately: $fullUrl")
-                webView.loadUrl(fullUrl)
-                pendingDeepLink = null
-            }
-            return
-        }
-
         val uri = intent?.data ?: return
         Log.d("DeepLink", "🌐 Received deep link: $uri")
 

@@ -26,5 +26,9 @@
 	</array>
 	<key>UILaunchScreen</key>
 	<false/>
+	<key>UIStatusBarHidden</key>
+	<true/>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
 </dict>
 </plist>
